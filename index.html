@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大武山下的小小書僮 - 整合平台入口</title>
+    <style>
+        /* 基本樣式重設 */
+        body {
+            font-family: 'Noto Sans TC', sans-serif; /* 使用更現代的字體 */
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; /* 輕微的灰色背景，突顯卡片 */
+            color: #333;
+        }
+
+        /* 主標題樣式 (源自 image_1.png) */
+        header {
+            background-color: #343a40; /* 深色背景 */
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            margin: 10px 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+
+        /* 四宮格容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 自適應排版 */
+            gap: 25px;
+            padding-bottom: 50px;
+        }
+
+        /* 卡片樣式 (升級版 image_0.png) */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* 更柔和的陰影 */
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden; /* 確保內容不超出 */
+            border: 1px solid #eaeaea;
+        }
+
+        .card:hover {
+            transform: translateY(-5px); /* 懸停時浮起 */
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        /* 卡片頭部樣式 (可加小圖示) */
+        .card-header {
+            background-color: #f1f3f5;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            color: #495057;
+        }
+
+        /* 卡片內容區域 (條列式風格，源自 image_1.png 和 image_2.png) */
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-body p.subtitle {
+            margin: 0 0 15px;
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+
+        .link-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .link-list li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .link-list li::before {
+            content: "•"; /* 加入小圓點，增加條列感 */
+            color: #007bff;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .link-list a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .link-list a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        /* 興趣區塊特別樣式 (可擴充) */
+        .interests-body {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px 20px;
+        }
+
+        /* 手機版自適應優化 */
+        @media (max-width: 600px) {
+            header h1 { font-size: 2em; }
+            .container { grid-template-columns: 1fr; } /* 手機上單欄顯示 */
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>大武山下的小小書僮</h1>
+        <p>理科桃太郎AI教職整合平台</p>
+    </header>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="card-header">
+                <h2>📚 科任教學</h2>
+            </div>
+            <div class="card-body">
+                <p class="subtitle">GWS 真實評量系統 1.5</p>
+                <ul class="link-list">
+                    <li>
+                        <a href="https://script.google.com/macros/s/AKfycby7gSG4-y4NE8FV0NTNOrZMb7MEysY91uwRt48U2bchd0UB3pplUtwh1OTlMFdsataa6g/exec" target="_blank">🚀 進入評量系統 (網頁版)</a>
+                    </li>
+                    <li>
+                        <a href="https://docs.google.com/spreadsheets/d/1B-c78jk75L19WrMhCu8xsPU_mIST_KHXuwSydEY4rRE/edit?usp=sharing" target="_blank">⚙️ 系統後台 (試算表)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>🏫 班級經營</h2>
+            </div>
+            <div class="card-body">
+                <p class="subtitle">導師數位助理 1.0</p>
+                <ul class="link-list">
+                    <li>
+                        <a href="https://script.google.com/macros/s/AKfycbza22zCkGFJRBEpwiplYSxkjhrhGLEHgBOyZ85WO1DrRV3qkWwt8tPtmPjiYFY-I84W/exec" target="_blank">🚀 數位助理介面 (網頁版)</a>
+                    </li>
+                    <li>
+                        <a href="https://docs.google.com/spreadsheets/d/1peCMjwVmQw9-YIQvmvffG5Tn3TrwhT2VPwzC1SMeDlY/edit?usp=sharing" target="_blank">⚙️ 助理資料管理 (後台)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2>📂 行政工作</h2>
+            </div>
+            <div class="card-body">
+                <p class="subtitle">雲端公文與資料庫</p>
+                <ul class="link-list">
+                    <li><a href="https://drive.google.com/drive/folders/1-HyGnxn0gSp1UloviQLnZ7ueF56praFi?usp=drive_link" target="_blank">歷年行政資料備份</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>☕ 個人興趣</h2>
+            </div>
+            <div class="interests-body">
+                <p>建置中，敬請期待</p>
+                <p style="font-size: 0.8em; opacity: 0.7;">(預計規劃攝影作品或讀書心得)</p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
