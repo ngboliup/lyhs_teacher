@@ -16,8 +16,8 @@
         .bg-gold { background-color: var(--main-gold); color: #000000; }
 
         /* 情境模式樣式 */
-        body.mode-study { --main-gold: #4ade80; --bg-color: #001a1a; } /* 自習模式-綠色 */
-        body.mode-break { --main-gold: #60a5fa; --bg-color: #0f172a; } /* 下課模式-藍色 */
+        body.mode-study { --main-gold: #4ade80; --bg-color: #001a1a; } 
+        body.mode-break { --main-gold: #60a5fa; --bg-color: #0f172a; } 
         
         /* 權限介面 */
         .admin-only { display: none; }
@@ -34,7 +34,7 @@
         #alert-overlay.active { display: flex; animation: flash 0.5s infinite; }
         @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        input, textarea { color: var(--main-gold) !important; background: #111 !important; border: 1px solid var(--main-gold) !important; border-radius: 8px; padding: 10px; width: 100%; }
+        input, textarea { color: var(--main-gold) !important; background: #1a1a1a !important; border: 1px solid var(--main-gold) !important; border-radius: 8px; padding: 12px; width: 100%; }
         .btn-action { background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; font-weight: bold; }
         .btn-action:active { background: var(--main-gold); color: black; }
         
@@ -99,39 +99,61 @@
         </div>
     </div>
 
-    <div class="admin-only space-y-6">
+    <div class="admin-only max-w-2xl mx-auto space-y-6 pb-20">
         <h2 class="text-2xl font-bold text-gold border-b border-gold pb-2">📱 老師全功能中控室</h2>
         
-        <section class="bg-[#222] p-4 rounded-xl">
-            <label>⏱️ 倒數計時設定 (分鐘)</label>
-            <div class="flex gap-2">
-                <input type="number" id="i-timer" value="50">
-                <button onclick="startTimer()" class="bg-gold text-black px-6 rounded font-bold">開始計時</button>
-                <button onclick="dbUpdate('timerEnd', 0)" class="bg-red-900 px-6 rounded font-bold">取消</button>
+        <section class="bg-[#222] p-4 rounded-xl border border-[#333]">
+            <label class="text-sm text-gray-400 font-bold mb-2 block">⏱️ 倒數計時與情境</label>
+            <div class="flex gap-2 mb-4">
+                <input type="number" id="i-timer" value="50" class="w-20 text-center" placeholder="分鐘">
+                <button onclick="startTimer()" class="bg-gold text-black px-4 rounded font-bold flex-1">開始計時</button>
+                <button onclick="dbUpdate('timerEnd', 0)" class="bg-red-900 px-4 rounded font-bold">取消</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="dbUpdate('mode', 'exam')" class="btn-action">✍️ 考試</button>
+                <button onclick="dbUpdate('mode', 'study')" class="btn-action">📖 自習</button>
+                <button onclick="dbUpdate('mode', 'break')" class="btn-action">☕ 下課</button>
             </div>
         </section>
 
-        <section class="grid grid-cols-3 gap-2">
-            <button onclick="dbUpdate('mode', 'exam')" class="btn-action">✍️ 考試</button>
-            <button onclick="dbUpdate('mode', 'study')" class="btn-action">📖 自習</button>
-            <button onclick="dbUpdate('mode', 'break')" class="btn-action">☕ 下課</button>
-        </section>
-
-        <section>
-            <label>📢 罐頭訊息廣播</label>
-            <div class="grid grid-cols-2 gap-2 mt-2">
-                <button onclick="dbUpdate('note', '🤫 保持安靜，專心作答')" class="btn-action text-sm">保持安靜</button>
-                <button onclick="dbUpdate('note', '📝 準備收卷，請檢查班級姓名')" class="btn-action text-sm">準備收卷</button>
-                <button onclick="sendDing()" class="bg-blue-900 p-2 rounded-lg font-bold">🔔 叮咚提示音</button>
-                <button onclick="triggerAlert()" class="bg-red-700 p-2 rounded-lg font-bold">🚨 緊急蓋板</button>
+        <section class="grid grid-cols-2 gap-4">
+            <div class="bg-[#222] p-4 rounded-xl border border-[#333]">
+                <label class="text-sm text-gray-400 font-bold mb-2 block">👥 應到總數</label>
+                <input type="number" id="i-total" placeholder="例如: 35" oninput="dbUpdate('total', parseInt(this.value)||0)">
+            </div>
+            <div class="bg-[#222] p-4 rounded-xl border border-[#333]">
+                <label class="text-sm text-gray-400 font-bold mb-2 block">🙋 實到人數</label>
+                <input type="number" id="i-present" placeholder="直接輸入實到人數" oninput="dbUpdate('present', parseInt(this.value)||0)">
             </div>
         </section>
 
         <section class="space-y-4">
-            <input type="text" id="i-title" placeholder="公告標題" oninput="dbUpdate('title', this.value)">
-            <textarea id="i-marquee" rows="1" placeholder="跑馬燈內容" oninput="dbUpdate('marquee', this.value)"></textarea>
-            <textarea id="i-note" rows="2" placeholder="中間公告內容" oninput="dbUpdate('note', this.value)"></textarea>
-            <input type="text" id="i-absentIds" placeholder="缺考座號" oninput="dbUpdate('absentIds', this.value)">
+            <div>
+                <label class="text-sm text-gray-400 font-bold mb-1 block">📢 標題與公告</label>
+                <input type="text" id="i-title" placeholder="考試名稱 / 標題" class="mb-2" oninput="dbUpdate('title', this.value)">
+                <textarea id="i-note" rows="2" placeholder="中間大字公告內容" class="mb-2" oninput="dbUpdate('note', this.value)"></textarea>
+                <input type="text" id="i-absentIds" placeholder="缺考座號 (例如: 05, 12)" oninput="dbUpdate('absentIds', this.value)">
+            </div>
+
+            <div>
+                <label class="text-sm text-gray-400 font-bold mb-1 block">📋 考程時序 (每行一節)</label>
+                <textarea id="i-schedule" rows="3" placeholder="08:10 國文&#10;09:10 數學" oninput="dbUpdate('schedule', this.value)"></textarea>
+            </div>
+
+            <div>
+                <label class="text-sm text-gray-400 font-bold mb-1 block">🏃 底部跑馬燈</label>
+                <textarea id="i-marquee" rows="1" placeholder="跑馬燈內容" oninput="dbUpdate('marquee', this.value)"></textarea>
+            </div>
+        </section>
+
+        <section>
+            <label class="text-sm text-gray-400 font-bold mb-2 block">⚡ 快速指令</label>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="dbUpdate('note', '🤫 保持安靜，專心作答')" class="btn-action text-sm">保持安靜</button>
+                <button onclick="dbUpdate('note', '📝 準備收卷，請檢查班級姓名')" class="btn-action text-sm">準備收卷</button>
+                <button onclick="sendDing()" class="bg-blue-900 p-3 rounded-lg font-bold">🔔 叮咚聲</button>
+                <button onclick="triggerAlert()" class="bg-red-700 p-3 rounded-lg font-bold">🚨 緊急蓋板</button>
+            </div>
         </section>
     </div>
 
@@ -150,15 +172,14 @@
         const isAdmin = new URLSearchParams(window.location.search).has('admin');
         if (isAdmin) document.body.classList.add('is-admin');
 
-        // 即時監聽
+        let isFirstLoad = true; // 新增：判斷是否為初次載入
+
         rootRef.on('value', (snap) => {
             const d = snap.val() || {};
             
-            // 模式切換
             document.body.className = isAdmin ? 'is-admin' : '';
             if (d.mode) document.body.classList.add('mode-' + d.mode);
 
-            // 文字同步
             document.getElementById('v-title').innerText = d.title || '無標題';
             document.getElementById('v-schedule').innerText = d.schedule || '';
             document.getElementById('v-total').innerText = d.total || 0;
@@ -168,35 +189,41 @@
             document.getElementById('v-note').innerText = d.note || '';
             document.getElementById('v-marquee').innerText = d.marquee || '歡迎使用無聲廣播系統';
 
-            // 同步中控台 (防止打字干擾)
             if (isAdmin) {
-                const inputs = {'i-title':'title', 'i-note':'note', 'i-absentIds':'absentIds', 'i-marquee':'marquee'};
+                // 將實到人數(i-present)加入同步陣列
+                const inputs = {'i-title':'title', 'i-note':'note', 'i-absentIds':'absentIds', 'i-marquee':'marquee', 'i-total':'total', 'i-present':'present', 'i-schedule':'schedule'};
                 for (let id in inputs) {
-                    if (document.getElementById(id) && document.activeElement !== document.getElementById(id)) {
-                        document.getElementById(id).value = d[inputs[id]] || '';
+                    const el = document.getElementById(id);
+                    if (el && document.activeElement !== el) {
+                        el.value = d[inputs[id]] || '';
                     }
                 }
             }
 
-            // 處理叮咚聲與緊急蓋板
             if (!isAdmin) {
-                if (d.alertTrigger > (window.lastAlert || 0)) {
-                    document.getElementById('alert-overlay').classList.add('active');
-                    setTimeout(() => document.getElementById('alert-overlay').classList.remove('active'), 5000);
-                    window.lastAlert = d.alertTrigger;
-                }
-                if (d.dingTrigger > (window.lastDing || 0)) {
-                    document.getElementById('sound-ding').play();
-                    window.lastDing = d.dingTrigger;
+                if (isFirstLoad) {
+                    // 初次載入時，只記錄時間，不觸發特效
+                    window.lastAlert = d.alertTrigger || 0;
+                    window.lastDing = d.dingTrigger || 0;
+                    isFirstLoad = false;
+                } else {
+                    // 非初次載入，若時間更新才觸發特效
+                    if (d.alertTrigger > (window.lastAlert || 0)) {
+                        document.getElementById('alert-overlay').classList.add('active');
+                        setTimeout(() => document.getElementById('alert-overlay').classList.remove('active'), 5000);
+                        window.lastAlert = d.alertTrigger;
+                    }
+                    if (d.dingTrigger > (window.lastDing || 0)) {
+                        document.getElementById('sound-ding').play().catch(e => console.log('音效播放需使用者先互動過網頁'));
+                        window.lastDing = d.dingTrigger;
+                    }
                 }
             }
 
-            // 倒數計時邏輯 (全域變數存儲)
             window.timerEnd = d.timerEnd || 0;
             window.timerStart = d.timerStart || 0;
         });
 
-        // 倒數計時器每秒計算
         setInterval(() => {
             const clock = document.getElementById('clock');
             if(clock) clock.innerText = new Date().toLocaleTimeString('zh-TW', { hour12: false });
@@ -212,11 +239,9 @@
                     const timeStr = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
                     document.getElementById('v-countdown').innerText = timeStr;
                     
-                    // 進度條
                     const prog = 100 - (diff / totalDur * 100);
                     document.getElementById('v-progress').style.width = prog + '%';
                     
-                    // 5分鐘變紅
                     if (diff < 300000) document.getElementById('v-countdown').classList.add('timer-warning');
                     else document.getElementById('v-countdown').classList.remove('timer-warning');
                 } else {
@@ -229,16 +254,16 @@
             }
         }, 1000);
 
-        // 管理端函數
-        function dbUpdate(f, v) { rootRef.child(f).set(v); }
-        function sendDing() { rootRef.child('dingTrigger').set(Date.now()); }
-        function triggerAlert() { rootRef.child('alertTrigger').set(Date.now()); }
-        function startTimer() {
+        // 管理端全域函數
+        window.dbUpdate = function(field, value) { rootRef.child(field).set(value); };
+        window.sendDing = function() { rootRef.child('dingTrigger').set(Date.now()); };
+        window.triggerAlert = function() { rootRef.child('alertTrigger').set(Date.now()); };
+        window.startTimer = function() {
             const mins = parseInt(document.getElementById('i-timer').value) || 0;
             const start = Date.now();
             const end = start + (mins * 60000);
             rootRef.update({ timerStart: start, timerEnd: end });
-        }
+        };
     </script>
 </body>
 </html>
