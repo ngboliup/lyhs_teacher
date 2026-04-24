@@ -1,205 +1,244 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大武山下的小小書僮 - 整合平台入口</title>
+    <title>班級全功能廣播中控系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* 基本樣式重設 */
-        body {
-            font-family: 'Noto Sans TC', sans-serif; /* 使用更現代的字體 */
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa; /* 輕微的灰色背景，突顯卡片 */
-            color: #333;
-        }
+        :root { --main-gold: #D4AF37; --bg-color: #000000; --card-bg: #0a0a0a; --accent-red: #ef4444; }
+        
+        body { background-color: var(--bg-color); color: #ffffff; font-family: "Microsoft JhengHei", sans-serif; transition: all 0.5s ease; overflow: hidden; }
+        .text-gold { color: var(--main-gold); }
+        .border-gold { border-color: var(--main-gold); }
+        .bg-gold { background-color: var(--main-gold); color: #000000; }
 
-        /* 主標題樣式 (源自 image_1.png) */
-        header {
-            background-color: #343a40; /* 深色背景 */
-            color: white;
-            text-align: center;
-            padding: 40px 20px;
-            margin-bottom: 30px;
-        }
+        /* 情境模式樣式 */
+        body.mode-study { --main-gold: #4ade80; --bg-color: #001a1a; } /* 自習模式-綠色 */
+        body.mode-break { --main-gold: #60a5fa; --bg-color: #0f172a; } /* 下課模式-藍色 */
+        
+        /* 權限介面 */
+        .admin-only { display: none; }
+        .is-admin .admin-only { display: block; background: #111; min-height: 100vh; padding: 20px; overflow-y: auto; }
+        .is-admin .viewer-only { display: none; }
 
-        header h1 {
-            margin: 0;
-            font-size: 2.5em;
-            letter-spacing: 2px;
-        }
+        /* 進度條與跑馬燈 */
+        .progress-bar-inner { transition: width 1s linear; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .marquee-text { animation: marquee 15s linear infinite; white-space: nowrap; }
 
-        header p {
-            margin: 10px 0 0;
-            opacity: 0.8;
-            font-size: 1.1em;
-        }
+        /* 緊急蓋板 */
+        #alert-overlay { display: none; position: fixed; inset: 0; background: red; z-index: 100; justify-content: center; align-items: center; }
+        #alert-overlay.active { display: flex; animation: flash 0.5s infinite; }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        /* 四宮格容器 */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 自適應排版 */
-            gap: 25px;
-            padding-bottom: 50px;
-        }
-
-        /* 卡片樣式 (升級版 image_0.png) */
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* 更柔和的陰影 */
-            transition: transform 0.2s, box-shadow 0.2s;
-            overflow: hidden; /* 確保內容不超出 */
-            border: 1px solid #eaeaea;
-        }
-
-        .card:hover {
-            transform: translateY(-5px); /* 懸停時浮起 */
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-        }
-
-        /* 卡片頭部樣式 (可加小圖示) */
-        .card-header {
-            background-color: #f1f3f5;
-            padding: 15px 20px;
-            border-bottom: 1px solid #eaeaea;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-header h2 {
-            margin: 0;
-            font-size: 1.4em;
-            color: #495057;
-        }
-
-        /* 卡片內容區域 (條列式風格，源自 image_1.png 和 image_2.png) */
-        .card-body {
-            padding: 20px;
-        }
-
-        .card-body p.subtitle {
-            margin: 0 0 15px;
-            color: #6c757d;
-            font-size: 0.95em;
-        }
-
-        .link-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .link-list li {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-        }
-
-        .link-list li::before {
-            content: "•"; /* 加入小圓點，增加條列感 */
-            color: #007bff;
-            font-weight: bold;
-            display: inline-block;
-            width: 1em;
-            margin-left: -1em;
-        }
-
-        .link-list a {
-            text-decoration: none;
-            color: #007bff;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .link-list a:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-
-        /* 興趣區塊特別樣式 (可擴充) */
-        .interests-body {
-            text-align: center;
-            color: #6c757d;
-            padding: 40px 20px;
-        }
-
-        /* 手機版自適應優化 */
-        @media (max-width: 600px) {
-            header h1 { font-size: 2em; }
-            .container { grid-template-columns: 1fr; } /* 手機上單欄顯示 */
-        }
+        input, textarea { color: var(--main-gold) !important; background: #111 !important; border: 1px solid var(--main-gold) !important; border-radius: 8px; padding: 10px; width: 100%; }
+        .btn-action { background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; font-weight: bold; }
+        .btn-action:active { background: var(--main-gold); color: black; }
+        
+        /* 倒數計時閃爍 */
+        .timer-warning { color: var(--accent-red) !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-    <header>
-        <h1>大武山下的小小書僮</h1>
-        <p>理科桃太郎AI教職整合平台</p>
-    </header>
+    <audio id="sound-ding" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
-    <div class="container">
-
-        <div class="card">
-            <div class="card-header">
-                <h2>📚 科任教學</h2>
-            </div>
-            <div class="card-body">
-                <p class="subtitle">GWS 真實評量系統 1.5</p>
-                <ul class="link-list">
-                    <li>
-                        <a href="https://script.google.com/macros/s/AKfycby7gSG4-y4NE8FV0NTNOrZMb7MEysY91uwRt48U2bchd0UB3pplUtwh1OTlMFdsataa6g/exec" target="_blank">🚀 進入評量系統 (網頁版)</a>
-                    </li>
-                    <li>
-                        <a href="https://docs.google.com/spreadsheets/d/1B-c78jk75L19WrMhCu8xsPU_mIST_KHXuwSydEY4rRE/edit?usp=sharing" target="_blank">⚙️ 系統後台 (試算表)</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>🏫 班級經營</h2>
-            </div>
-            <div class="card-body">
-                <p class="subtitle">導師數位助理 1.0</p>
-                <ul class="link-list">
-                    <li>
-                        <a href="https://script.google.com/macros/s/AKfycbza22zCkGFJRBEpwiplYSxkjhrhGLEHgBOyZ85WO1DrRV3qkWwt8tPtmPjiYFY-I84W/exec" target="_blank">🚀 數位助理介面 (網頁版)</a>
-                    </li>
-                    <li>
-                        <a href="https://docs.google.com/spreadsheets/d/1peCMjwVmQw9-YIQvmvffG5Tn3TrwhT2VPwzC1SMeDlY/edit?usp=sharing" target="_blank">⚙️ 助理資料管理 (後台)</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                <h2>📂 行政工作</h2>
-            </div>
-            <div class="card-body">
-                <p class="subtitle">雲端公文與資料庫</p>
-                <ul class="link-list">
-                    <li><a href="https://drive.google.com/drive/folders/1-HyGnxn0gSp1UloviQLnZ7ueF56praFi?usp=drive_link" target="_blank">歷年行政資料備份</a></li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>☕ 個人興趣</h2>
-            </div>
-            <div class="interests-body">
-                <p>建置中，敬請期待</p>
-                <p style="font-size: 0.8em; opacity: 0.7;">(預計規劃攝影作品或讀書心得)</p>
-            </div>
-        </div>
-
+    <div id="alert-overlay">
+        <h1 class="text-[15rem] font-black text-white">注意！</h1>
     </div>
 
+    <div class="viewer-only p-8 h-screen flex flex-col relative">
+        <div class="flex justify-between items-end border-b-2 border-gold pb-4 mb-4">
+            <div class="flex items-baseline gap-6">
+                <h1 id="v-title" class="text-6xl font-black text-gold">載入中...</h1>
+                <div id="v-countdown" class="text-6xl font-mono font-black text-white">00:00</div>
+            </div>
+            <div id="clock" class="text-7xl font-mono text-gold font-bold">00:00:00</div>
+        </div>
+
+        <div class="w-full h-4 bg-gray-800 rounded-full mb-6 overflow-hidden border border-gray-700">
+            <div id="v-progress" class="progress-bar-inner h-full bg-gold w-0"></div>
+        </div>
+        
+        <div class="grid grid-cols-12 gap-8 flex-grow overflow-hidden">
+            <div class="col-span-4 bg-[#0a0a0a] p-6 rounded-3xl border border-[#222]">
+                <h2 class="text-2xl font-bold text-gold mb-4 border-b border-[#222] pb-2">📋 考程時序</h2>
+                <div id="v-schedule" class="text-3xl leading-relaxed whitespace-pre-line text-gray-300"></div>
+            </div>
+            
+            <div class="col-span-8 flex flex-col gap-6">
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-[#0a0a0a] p-4 rounded-2xl text-center border border-[#222]">
+                        <p class="text-xl text-gray-500 font-bold">應到</p>
+                        <p id="v-total" class="text-6xl font-black">--</p>
+                    </div>
+                    <div class="bg-gold/10 p-4 rounded-2xl text-center border border-gold">
+                        <p class="text-xl text-gold font-bold">實到</p>
+                        <p id="v-present" class="text-6xl font-black text-gold">--</p>
+                    </div>
+                    <div class="bg-red-950/10 p-4 rounded-2xl text-center border border-red-900">
+                        <p class="text-xl text-red-500 font-bold">缺考</p>
+                        <p id="v-absent" class="text-6xl font-black text-red-500">--</p>
+                    </div>
+                </div>
+                
+                <div class="bg-[#0a0a0a] p-8 rounded-3xl border border-gold flex-grow relative flex flex-col justify-center">
+                    <div class="absolute -top-4 left-8 bg-gold px-4 py-1 rounded text-black font-bold">重要公告</div>
+                    <div id="v-absentIds" class="text-4xl font-bold text-red-500 mb-4 tracking-wider"></div>
+                    <div id="v-note" class="text-4xl text-gray-200 leading-snug"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="h-12 mt-4 bg-gray-900 border-t border-gold flex items-center overflow-hidden">
+            <div id="v-marquee" class="marquee-text text-2xl text-gold font-bold"></div>
+        </div>
+    </div>
+
+    <div class="admin-only space-y-6">
+        <h2 class="text-2xl font-bold text-gold border-b border-gold pb-2">📱 老師全功能中控室</h2>
+        
+        <section class="bg-[#222] p-4 rounded-xl">
+            <label>⏱️ 倒數計時設定 (分鐘)</label>
+            <div class="flex gap-2">
+                <input type="number" id="i-timer" value="50">
+                <button onclick="startTimer()" class="bg-gold text-black px-6 rounded font-bold">開始計時</button>
+                <button onclick="dbUpdate('timerEnd', 0)" class="bg-red-900 px-6 rounded font-bold">取消</button>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-3 gap-2">
+            <button onclick="dbUpdate('mode', 'exam')" class="btn-action">✍️ 考試</button>
+            <button onclick="dbUpdate('mode', 'study')" class="btn-action">📖 自習</button>
+            <button onclick="dbUpdate('mode', 'break')" class="btn-action">☕ 下課</button>
+        </section>
+
+        <section>
+            <label>📢 罐頭訊息廣播</label>
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <button onclick="dbUpdate('note', '🤫 保持安靜，專心作答')" class="btn-action text-sm">保持安靜</button>
+                <button onclick="dbUpdate('note', '📝 準備收卷，請檢查班級姓名')" class="btn-action text-sm">準備收卷</button>
+                <button onclick="sendDing()" class="bg-blue-900 p-2 rounded-lg font-bold">🔔 叮咚提示音</button>
+                <button onclick="triggerAlert()" class="bg-red-700 p-2 rounded-lg font-bold">🚨 緊急蓋板</button>
+            </div>
+        </section>
+
+        <section class="space-y-4">
+            <input type="text" id="i-title" placeholder="公告標題" oninput="dbUpdate('title', this.value)">
+            <textarea id="i-marquee" rows="1" placeholder="跑馬燈內容" oninput="dbUpdate('marquee', this.value)"></textarea>
+            <textarea id="i-note" rows="2" placeholder="中間公告內容" oninput="dbUpdate('note', this.value)"></textarea>
+            <input type="text" id="i-absentIds" placeholder="缺考座號" oninput="dbUpdate('absentIds', this.value)">
+        </section>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCq2hz8db4pJfJ2U0RxhklkleyCM62fgvQ",
+            authDomain: "realtime-database-2aa5f.firebaseapp.com",
+            databaseURL: "https://realtime-database-2aa5f-default-rtdb.firebaseio.com", 
+            projectId: "realtime-database-2aa5f",
+            appId: "1:740396293518:web:0bc6035b9ec1cc27c458df"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const rootRef = db.ref('classroom_plus');
+
+        const isAdmin = new URLSearchParams(window.location.search).has('admin');
+        if (isAdmin) document.body.classList.add('is-admin');
+
+        // 即時監聽
+        rootRef.on('value', (snap) => {
+            const d = snap.val() || {};
+            
+            // 模式切換
+            document.body.className = isAdmin ? 'is-admin' : '';
+            if (d.mode) document.body.classList.add('mode-' + d.mode);
+
+            // 文字同步
+            document.getElementById('v-title').innerText = d.title || '無標題';
+            document.getElementById('v-schedule').innerText = d.schedule || '';
+            document.getElementById('v-total').innerText = d.total || 0;
+            document.getElementById('v-present').innerText = d.present || 0;
+            document.getElementById('v-absent').innerText = Math.max(0, (d.total||0) - (d.present||0));
+            document.getElementById('v-absentIds').innerText = d.absentIds ? '缺考：'+d.absentIds : '';
+            document.getElementById('v-note').innerText = d.note || '';
+            document.getElementById('v-marquee').innerText = d.marquee || '歡迎使用無聲廣播系統';
+
+            // 同步中控台 (防止打字干擾)
+            if (isAdmin) {
+                const inputs = {'i-title':'title', 'i-note':'note', 'i-absentIds':'absentIds', 'i-marquee':'marquee'};
+                for (let id in inputs) {
+                    if (document.getElementById(id) && document.activeElement !== document.getElementById(id)) {
+                        document.getElementById(id).value = d[inputs[id]] || '';
+                    }
+                }
+            }
+
+            // 處理叮咚聲與緊急蓋板
+            if (!isAdmin) {
+                if (d.alertTrigger > (window.lastAlert || 0)) {
+                    document.getElementById('alert-overlay').classList.add('active');
+                    setTimeout(() => document.getElementById('alert-overlay').classList.remove('active'), 5000);
+                    window.lastAlert = d.alertTrigger;
+                }
+                if (d.dingTrigger > (window.lastDing || 0)) {
+                    document.getElementById('sound-ding').play();
+                    window.lastDing = d.dingTrigger;
+                }
+            }
+
+            // 倒數計時邏輯 (全域變數存儲)
+            window.timerEnd = d.timerEnd || 0;
+            window.timerStart = d.timerStart || 0;
+        });
+
+        // 倒數計時器每秒計算
+        setInterval(() => {
+            const clock = document.getElementById('clock');
+            if(clock) clock.innerText = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+
+            if (window.timerEnd > 0) {
+                const now = Date.now();
+                const diff = window.timerEnd - now;
+                const totalDur = window.timerEnd - window.timerStart;
+                
+                if (diff > 0) {
+                    const mins = Math.floor(diff / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    const timeStr = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+                    document.getElementById('v-countdown').innerText = timeStr;
+                    
+                    // 進度條
+                    const prog = 100 - (diff / totalDur * 100);
+                    document.getElementById('v-progress').style.width = prog + '%';
+                    
+                    // 5分鐘變紅
+                    if (diff < 300000) document.getElementById('v-countdown').classList.add('timer-warning');
+                    else document.getElementById('v-countdown').classList.remove('timer-warning');
+                } else {
+                    document.getElementById('v-countdown').innerText = "00:00";
+                    document.getElementById('v-progress').style.width = '100%';
+                }
+            } else {
+                document.getElementById('v-countdown').innerText = "";
+                document.getElementById('v-progress').style.width = '0%';
+            }
+        }, 1000);
+
+        // 管理端函數
+        function dbUpdate(f, v) { rootRef.child(f).set(v); }
+        function sendDing() { rootRef.child('dingTrigger').set(Date.now()); }
+        function triggerAlert() { rootRef.child('alertTrigger').set(Date.now()); }
+        function startTimer() {
+            const mins = parseInt(document.getElementById('i-timer').value) || 0;
+            const start = Date.now();
+            const end = start + (mins * 60000);
+            rootRef.update({ timerStart: start, timerEnd: end });
+        }
+    </script>
 </body>
 </html>
