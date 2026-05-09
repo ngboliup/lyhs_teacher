@@ -34,6 +34,10 @@
         #alert-overlay.active { display: flex; animation: flash 0.5s infinite; }
         @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+        /* 啟動蓋板 (解決音效自動播放限制) */
+        #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
+        #start-overlay.hidden { display: none; }
+
         input, textarea { color: var(--main-gold) !important; background: #1a1a1a !important; border: 1px solid var(--main-gold) !important; border-radius: 8px; padding: 12px; width: 100%; }
         .btn-action { background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; font-weight: bold; }
         .btn-action:active { background: var(--main-gold); color: black; }
@@ -44,6 +48,14 @@
     </style>
 </head>
 <body class="min-h-screen">
+
+    <!-- 啟動按鈕 (用於解鎖音效播放) -->
+    <div id="start-overlay" onclick="initSystem()">
+        <div class="bg-gold text-black p-8 rounded-full text-4xl font-bold animate-bounce mb-4 text-center">
+            點擊此處啟動系統<br><span class="text-xl">Enable Audio & Alerts</span>
+        </div>
+        <p class="text-gray-400">若要播放提示音效，瀏覽器需要使用者先互動過頁面</p>
+    </div>
 
     <audio id="sound-ding" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
@@ -107,50 +119,50 @@
             <div class="flex gap-2 mb-4">
                 <input type="number" id="i-timer" value="50" class="w-20 text-center" placeholder="分鐘">
                 <button onclick="startTimer()" class="bg-gold text-black px-4 rounded font-bold flex-1">開始計時</button>
-                <button onclick="dbUpdate('timerEnd', 0)" class="bg-red-900 px-4 rounded font-bold">取消</button>
+                <button onclick="dbUpdateImmediate('timerEnd', 0)" class="bg-red-900 px-4 rounded font-bold">取消</button>
             </div>
             <div class="grid grid-cols-3 gap-2">
-                <button onclick="dbUpdate('mode', 'exam')" class="btn-action">✍️ 考試</button>
-                <button onclick="dbUpdate('mode', 'study')" class="btn-action">📖 自習</button>
-                <button onclick="dbUpdate('mode', 'break')" class="btn-action">☕ 下課</button>
+                <button onclick="dbUpdateImmediate('mode', 'exam')" class="btn-action">✍️ 考試</button>
+                <button onclick="dbUpdateImmediate('mode', 'study')" class="btn-action">📖 自習</button>
+                <button onclick="dbUpdateImmediate('mode', 'break')" class="btn-action">☕ 下課</button>
             </div>
         </section>
 
         <section class="grid grid-cols-2 gap-4">
             <div class="bg-[#222] p-4 rounded-xl border border-[#333]">
                 <label class="text-sm text-gray-400 font-bold mb-2 block">👥 應到總數</label>
-                <input type="number" id="i-total" placeholder="例如: 35" oninput="dbUpdate('total', parseInt(this.value)||0)">
+                <input type="number" id="i-total" placeholder="例如: 35" oninput="dbUpdateDebounced('total', parseInt(this.value)||0)">
             </div>
             <div class="bg-[#222] p-4 rounded-xl border border-[#333]">
                 <label class="text-sm text-gray-400 font-bold mb-2 block">🙋 實到人數</label>
-                <input type="number" id="i-present" placeholder="直接輸入實到人數" oninput="dbUpdate('present', parseInt(this.value)||0)">
+                <input type="number" id="i-present" placeholder="直接輸入實到人數" oninput="dbUpdateDebounced('present', parseInt(this.value)||0)">
             </div>
         </section>
 
         <section class="space-y-4">
             <div>
                 <label class="text-sm text-gray-400 font-bold mb-1 block">📢 標題與公告</label>
-                <input type="text" id="i-title" placeholder="考試名稱 / 標題" class="mb-2" oninput="dbUpdate('title', this.value)">
-                <textarea id="i-note" rows="2" placeholder="中間大字公告內容" class="mb-2" oninput="dbUpdate('note', this.value)"></textarea>
-                <input type="text" id="i-absentIds" placeholder="缺考座號 (例如: 05, 12)" oninput="dbUpdate('absentIds', this.value)">
+                <input type="text" id="i-title" placeholder="考試名稱 / 標題" class="mb-2" oninput="dbUpdateDebounced('title', this.value)">
+                <textarea id="i-note" rows="2" placeholder="中間大字公告內容" class="mb-2" oninput="dbUpdateDebounced('note', this.value)"></textarea>
+                <input type="text" id="i-absentIds" placeholder="缺考座號 (例如: 05, 12)" oninput="dbUpdateDebounced('absentIds', this.value)">
             </div>
 
             <div>
                 <label class="text-sm text-gray-400 font-bold mb-1 block">📋 考程時序 (每行一節)</label>
-                <textarea id="i-schedule" rows="3" placeholder="08:10 國文&#10;09:10 數學" oninput="dbUpdate('schedule', this.value)"></textarea>
+                <textarea id="i-schedule" rows="3" placeholder="08:10 國文&#10;09:10 數學" oninput="dbUpdateDebounced('schedule', this.value)"></textarea>
             </div>
 
             <div>
                 <label class="text-sm text-gray-400 font-bold mb-1 block">🏃 底部跑馬燈</label>
-                <textarea id="i-marquee" rows="1" placeholder="跑馬燈內容" oninput="dbUpdate('marquee', this.value)"></textarea>
+                <textarea id="i-marquee" rows="1" placeholder="跑馬燈內容" oninput="dbUpdateDebounced('marquee', this.value)"></textarea>
             </div>
         </section>
 
         <section>
             <label class="text-sm text-gray-400 font-bold mb-2 block">⚡ 快速指令</label>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="dbUpdate('note', '🤫 保持安靜，專心作答')" class="btn-action text-sm">保持安靜</button>
-                <button onclick="dbUpdate('note', '📝 準備收卷，請檢查班級姓名')" class="btn-action text-sm">準備收卷</button>
+                <button onclick="dbUpdateImmediate('note', '🤫 保持安靜，專心作答')" class="btn-action text-sm">保持安靜</button>
+                <button onclick="dbUpdateImmediate('note', '📝 準備收卷，請檢查班級姓名')" class="btn-action text-sm">準備收卷</button>
                 <button onclick="sendDing()" class="bg-blue-900 p-3 rounded-lg font-bold">🔔 叮咚聲</button>
                 <button onclick="triggerAlert()" class="bg-red-700 p-3 rounded-lg font-bold">🚨 緊急蓋板</button>
             </div>
@@ -170,9 +182,22 @@
         const rootRef = db.ref('classroom_plus');
 
         const isAdmin = new URLSearchParams(window.location.search).has('admin');
-        if (isAdmin) document.body.classList.add('is-admin');
+        if (isAdmin) {
+            document.body.classList.add('is-admin');
+            document.getElementById('start-overlay').classList.add('hidden'); // 管理員不需要啟動蓋板
+        }
 
-        let isFirstLoad = true; // 新增：判斷是否為初次載入
+        function initSystem() {
+            document.getElementById('start-overlay').classList.add('hidden');
+            // 預播放一個靜音片段以解鎖音效
+            const audio = document.getElementById('sound-ding');
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }).catch(e => console.log("Audio unlock failed"));
+        }
+
+        let isFirstLoad = true;
 
         rootRef.on('value', (snap) => {
             const d = snap.val() || {};
@@ -190,11 +215,11 @@
             document.getElementById('v-marquee').innerText = d.marquee || '歡迎使用無聲廣播系統';
 
             if (isAdmin) {
-                // 將實到人數(i-present)加入同步陣列
                 const inputs = {'i-title':'title', 'i-note':'note', 'i-absentIds':'absentIds', 'i-marquee':'marquee', 'i-total':'total', 'i-present':'present', 'i-schedule':'schedule'};
                 for (let id in inputs) {
                     const el = document.getElementById(id);
-                    if (el && document.activeElement !== el) {
+                    // 只有在非聚焦且當前沒有正在進行的 Debounce 時才同步遠端資料到 Input
+                    if (el && document.activeElement !== el && !window['debounce_'+id]) {
                         el.value = d[inputs[id]] || '';
                     }
                 }
@@ -202,19 +227,17 @@
 
             if (!isAdmin) {
                 if (isFirstLoad) {
-                    // 初次載入時，只記錄時間，不觸發特效
                     window.lastAlert = d.alertTrigger || 0;
                     window.lastDing = d.dingTrigger || 0;
                     isFirstLoad = false;
                 } else {
-                    // 非初次載入，若時間更新才觸發特效
                     if (d.alertTrigger > (window.lastAlert || 0)) {
                         document.getElementById('alert-overlay').classList.add('active');
                         setTimeout(() => document.getElementById('alert-overlay').classList.remove('active'), 5000);
                         window.lastAlert = d.alertTrigger;
                     }
                     if (d.dingTrigger > (window.lastDing || 0)) {
-                        document.getElementById('sound-ding').play().catch(e => console.log('音效播放需使用者先互動過網頁'));
+                        document.getElementById('sound-ding').play().catch(e => console.log('音效播放失敗'));
                         window.lastDing = d.dingTrigger;
                     }
                 }
@@ -254,10 +277,25 @@
             }
         }, 1000);
 
-        // 管理端全域函數
-        window.dbUpdate = function(field, value) { rootRef.child(field).set(value); };
+        // 管理端優化：Debounce 函數避免打字閃爍
+        let debounceTimers = {};
+        window.dbUpdateDebounced = function(field, value) {
+            const elId = 'i-' + field;
+            if (debounceTimers[field]) clearTimeout(debounceTimers[field]);
+            window['debounce_'+elId] = true;
+            debounceTimers[field] = setTimeout(() => {
+                rootRef.child(field).set(value);
+                window['debounce_'+elId] = false;
+            }, 500); // 停止輸入 500ms 後才更新 Firebase
+        };
+
+        window.dbUpdateImmediate = function(field, value) { 
+            rootRef.child(field).set(value); 
+        };
+
         window.sendDing = function() { rootRef.child('dingTrigger').set(Date.now()); };
         window.triggerAlert = function() { rootRef.child('alertTrigger').set(Date.now()); };
+        
         window.startTimer = function() {
             const mins = parseInt(document.getElementById('i-timer').value) || 0;
             const start = Date.now();
