@@ -29,6 +29,8 @@
         .progress-bar-inner { transition: width 1s linear; transform: translateZ(0); }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .marquee-text { animation: marquee 15s linear infinite; white-space: nowrap; will-change: transform; }
+        /* 管理員端停用跑馬燈動畫節省資源 */
+        .is-admin .marquee-text { animation: none; transform: none; white-space: normal; }
 
         /* 緊急蓋板 */
         #alert-overlay { display: none; position: fixed; inset: 0; background: red; z-index: 100; justify-content: center; align-items: center; }
@@ -39,7 +41,7 @@
         #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; touch-action: manipulation; }
         #start-overlay.hidden { display: none; }
 
-        input, textarea { color: var(--main-gold) !important; background: #1a1a1a !important; border: 1px solid var(--main-gold) !important; border-radius: 8px; padding: 12px; width: 100%; font-size: 16px; /* 防止 iOS 自動縮放 */ }
+        input, textarea { color: var(--main-gold) !important; background: #1a1a1a !important; border: 1px solid var(--main-gold) !important; border-radius: 8px; padding: 12px; width: 100%; font-size: 16px; }
         .btn-action { background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; font-weight: bold; touch-action: manipulation; }
         .btn-action:active { background: var(--main-gold); color: black; }
         
@@ -185,48 +187,43 @@
         const isAdmin = new URLSearchParams(window.location.search).has('admin');
         if (isAdmin) {
             document.body.classList.add('is-admin');
-            document.getElementById('start-overlay').classList.add('hidden'); // 管理員不需要啟動蓋板
+            document.getElementById('start-overlay').classList.add('hidden');
         }
 
         function initSystem() {
             document.getElementById('start-overlay').classList.add('hidden');
-            // 預播放一個靜音片段以解鎖音效
             const audio = document.getElementById('sound-ding');
-            audio.play().then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-            }).catch(e => console.log("Audio unlock failed"));
+            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => {});
         }
 
         let isFirstLoad = true;
+        let localData = {}; // 快取本地資料避免無謂重繪
 
         rootRef.on('value', (snap) => {
             const d = snap.val() || {};
             
-            document.body.className = isAdmin ? 'is-admin' : '';
-            if (d.mode) document.body.classList.add('mode-' + d.mode);
-
-            document.getElementById('v-title').innerText = d.title || '無標題';
-            document.getElementById('v-schedule').innerText = d.schedule || '';
-            document.getElementById('v-total').innerText = d.total || 0;
-            document.getElementById('v-present').innerText = d.present || 0;
-            document.getElementById('v-absent').innerText = Math.max(0, (d.total||0) - (d.present||0));
-            document.getElementById('v-absentIds').innerText = d.absentIds ? '缺考：'+d.absentIds : '';
-            document.getElementById('v-note').innerText = d.note || '';
-            document.getElementById('v-marquee').innerText = d.marquee || '歡迎使用無聲廣播系統';
-
-            if (isAdmin) {
-                const inputs = {'i-title':'title', 'i-note':'note', 'i-absentIds':'absentIds', 'i-marquee':'marquee', 'i-total':'total', 'i-present':'present', 'i-schedule':'schedule'};
-                for (let id in inputs) {
-                    const el = document.getElementById(id);
-                    // 只有在非聚焦且當前沒有正在進行的 Debounce 時才同步遠端資料到 Input
-                    if (el && document.activeElement !== el && !window['debounce_'+id]) {
-                        el.value = d[inputs[id]] || '';
-                    }
-                }
+            // 模式切換 (只有在真的變動時才改 Class)
+            if (d.mode !== localData.mode) {
+                document.body.classList.remove('mode-exam', 'mode-study', 'mode-break');
+                if (d.mode) document.body.classList.add('mode-' + d.mode);
+                localData.mode = d.mode;
             }
 
+            // 看板端：只有非管理員才頻繁更新這些 DOM，減少 CPU 負擔
             if (!isAdmin) {
+                if (d.title !== localData.title) document.getElementById('v-title').innerText = d.title || '無標題';
+                if (d.schedule !== localData.schedule) document.getElementById('v-schedule').innerText = d.schedule || '';
+                if (d.total !== localData.total) document.getElementById('v-total').innerText = d.total || 0;
+                if (d.present !== localData.present) document.getElementById('v-present').innerText = d.present || 0;
+                
+                const absentNum = Math.max(0, (d.total||0) - (d.present||0));
+                if (absentNum !== localData.absentNum) document.getElementById('v-absent').innerText = absentNum;
+                
+                if (d.absentIds !== localData.absentIds) document.getElementById('v-absentIds').innerText = d.absentIds ? '缺考：'+d.absentIds : '';
+                if (d.note !== localData.note) document.getElementById('v-note').innerText = d.note || '';
+                if (d.marquee !== localData.marquee) document.getElementById('v-marquee').innerText = d.marquee || '歡迎使用無聲廣播系統';
+
+                // 特效處理
                 if (isFirstLoad) {
                     window.lastAlert = d.alertTrigger || 0;
                     window.lastDing = d.dingTrigger || 0;
@@ -238,16 +235,26 @@
                         window.lastAlert = d.alertTrigger;
                     }
                     if (d.dingTrigger > (window.lastDing || 0)) {
-                        document.getElementById('sound-ding').play().catch(e => console.log('音效播放失敗'));
+                        document.getElementById('sound-ding').play().catch(e => {});
                         window.lastDing = d.dingTrigger;
                     }
                 }
+            } else if (isFirstLoad) {
+                // 管理員端：只有第一次載入時同步雲端資料到 Input
+                const inputs = {'i-title':'title', 'i-note':'note', 'i-absentIds':'absentIds', 'i-marquee':'marquee', 'i-total':'total', 'i-present':'present', 'i-schedule':'schedule'};
+                for (let id in inputs) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = d[inputs[id]] || '';
+                }
+                isFirstLoad = false;
             }
 
             window.timerEnd = d.timerEnd || 0;
             window.timerStart = d.timerStart || 0;
+            localData = {...d, absentNum: Math.max(0, (d.total||0) - (d.present||0))};
         });
 
+        // 獨立的時間與計時器邏輯，不與 Firebase 監聽器綁在一起
         setInterval(() => {
             const clock = document.getElementById('clock');
             if(clock) clock.innerText = new Date().toLocaleTimeString('zh-TW', { hour12: false });
@@ -262,9 +269,7 @@
                     const secs = Math.floor((diff % 60000) / 1000);
                     const timeStr = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
                     document.getElementById('v-countdown').innerText = timeStr;
-                    
-                    const prog = 100 - (diff / totalDur * 100);
-                    document.getElementById('v-progress').style.width = prog + '%';
+                    document.getElementById('v-progress').style.width = (100 - (diff / totalDur * 100)) + '%';
                     
                     if (diff < 300000) document.getElementById('v-countdown').classList.add('timer-warning');
                     else document.getElementById('v-countdown').classList.remove('timer-warning');
@@ -278,16 +283,12 @@
             }
         }, 1000);
 
-        // 管理端優化：Debounce 函數避免打字閃爍
         let debounceTimers = {};
         window.dbUpdateDebounced = function(field, value) {
-            const elId = 'i-' + field;
             if (debounceTimers[field]) clearTimeout(debounceTimers[field]);
-            window['debounce_'+elId] = true;
             debounceTimers[field] = setTimeout(() => {
                 rootRef.child(field).set(value);
-                window['debounce_'+elId] = false;
-            }, 500); // 停止輸入 500ms 後才更新 Firebase
+            }, 800); // 稍微加長 Debounce 時間，對手機輸入更友善
         };
 
         window.dbUpdateImmediate = function(field, value) { 
